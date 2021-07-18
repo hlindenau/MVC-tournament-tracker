@@ -1,0 +1,107 @@
+﻿
+@model PagedList.IPagedList<TournamentsProject.Models.TournmentModel>
+@using PagedList.Mvc;
+@using Microsoft.AspNet.Identity.Owin
+@using Microsoft.AspNet.Identity
+
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Tournaments</h2>
+
+
+@using (Html.BeginForm("Index", "Home", FormMethod.Get))
+{
+
+        if (String.IsNullOrEmpty(User.Identity.GetUserId()))
+        {
+        <p>@Html.ActionLink("Log in", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink" }) to create a tournament</p>
+        }
+        else
+        {
+        if (HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>
+            ().FindById(User.Identity.GetUserId()).EmailConfirmed == true)
+            {
+            @Html.ActionLink("Create New", "Create", "Tournment",null, new { @class = "btn btn-primary" })
+            }
+            else
+            {
+            <p>Confirm your email to create a tournament</p>
+            }
+            }
+
+
+
+
+<div>
+    <br />
+    <p>
+        Find by name: @Html.TextBox("SearchString", ViewBag.CurrentFilter as string)
+        <input type="submit" value="Search" />
+    </p>
+</div>
+}
+<table class="table">
+    <tr>
+        <th>
+            
+            @Html.ActionLink("Tournament name", "Index", new { sortOrder = ViewBag.NameSortParm })
+        </th>
+        <th>
+            Organizer
+        </th>
+        <th>
+            Discipline
+        </th>
+        <th>
+            Assignment deadline
+        </th>
+        <th>
+            @Html.ActionLink("Tournament date", "Index", new { sortOrder = ViewBag.DateSortParm })
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.ActionLink(item.TournmentName, "Details", "Tournment", new { id = item.Id }, null)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.OrganizerName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Discipline)
+            </td>
+            <td>
+                @Convert.ToDateTime(item.AssignmentDeadline).ToString("MM/dd/yyyy HH:mm")
+            </td>
+            <td>
+                @Convert.ToDateTime(item.TournmentDate).ToString("MM/dd/yyyy HH:mm")
+            </td>
+            <td>
+                @if (String.Equals(User.Identity.GetUserId(), item.OrganizerId))
+                {
+                    @Html.ActionLink("Edit", "Edit", "Tournment", new { id = item.Id }, null);
+                    <a>|</a>
+                }
+                @if (String.Equals(User.Identity.GetUserId(), item.OrganizerId))
+                {
+                    @Html.ActionLink("Delete", "Delete", "Tournment", new { id = item.Id }, null)
+                }
+
+            </td>
+        </tr>
+    }
+
+</table>
+<br />
+Page @(Model.PageCount < Model.PageNumber ? 0 : Model.PageNumber) of @Model.PageCount
+
+@Html.PagedListPager(Model, page => Url.Action("Index",
+    new { page, sortOrder = ViewBag.CurrentSort, currentFilter = ViewBag.CurrentFilter }))
+

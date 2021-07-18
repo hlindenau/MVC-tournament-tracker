@@ -1,0 +1,50 @@
+﻿@model IEnumerable <TournamentsProject.Models.TournmentModel>
+@{
+    ViewBag.Title = "MyTournments";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>My Tournments</h2>
+
+<table class="table">
+    <tr>
+        <th>
+            Tournment name
+        </th>
+        <th>
+            Organizer
+        </th>
+        <th>
+            Discipline
+        </th>
+        <th>
+            Assignment deadline
+        </th>
+        <th>
+            Tournment Date
+        </th>
+        <th></th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.ActionLink(item.TournmentName, "Details", "Tournment", new { id = item.Id }, null)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.OrganizerName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Discipline)
+            </td>
+            <td>
+                 @Convert.ToDateTime(item.AssignmentDeadline).ToString("MM/dd/yyyy HH:mm")
+            </td>
+            <td>
+                @Convert.ToDateTime(item.TournmentDate).ToString("MM/dd/yyyy HH:mm")
+            </td>
+        </tr>
+    }
+
+</table>

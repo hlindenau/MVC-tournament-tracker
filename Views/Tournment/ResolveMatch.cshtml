@@ -1,0 +1,60 @@
+﻿@model TournamentsProject.Models.Participant
+@using TournamentsProject.Models
+@using Microsoft.AspNet.Identity;
+@using Microsoft.AspNet.Identity.Owin;
+
+@{
+    ViewBag.Title = "ResolveMatch";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Resolve Match</h2>
+
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+    @Html.HiddenFor(model => model.Id)
+    @Html.HiddenFor(model => model.Name)
+    @Html.HiddenFor(model => model.Ranking)
+    @Html.HiddenFor(model => model.CurrentOpponent)
+    @Html.HiddenFor(model => model.CurrentRound)
+    for (var i = 0; i < Model.BracketPosition.Count; ++i)
+    {
+        Html.HiddenFor(model => model.BracketPosition[i].Id);
+        Html.HiddenFor(model => model.BracketPosition[i].Pos);
+    }
+    @Html.HiddenFor(model => model.InitialPos)
+
+
+    <div class="form-horizontal">
+        <h4>Pick a winner</h4>
+        <hr />
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+        <div class="form-group">
+            @Html.LabelFor(model => model.RoundWinner, htmlAttributes: new { @class = "control-label col-md-2" })
+            <div class="col-md-10">
+
+                @{
+                    ViewBag.RoundParticipants = new List<int> { Model.Id, Model.CurrentOpponent.Id };//assume you do this statement in controller
+                    var dictionary = new Dictionary<int, string>
+                    {
+                        {Model.Id, HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(Model.Name).FirstName},
+                        {Model.CurrentOpponent.Id, HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(Model.CurrentOpponent.Name).FirstName}
+                    };
+                    ViewBag.SelectList = new SelectList(dictionary, "Value", "Key");
+                    List<int> RoundParticipants = (List<int>)ViewBag.RoundParticipants;
+                }
+
+                @Html.DropDownListFor(model => model.RoundWinner, new SelectList(dictionary, "Key", "Value"), new { @class = "form-control", @min = "2" })
+                @Html.ValidationMessageFor(model => model.RoundWinner, "", new { @class = "text-danger" })
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-offset-2 col-md-10">
+                <input type="submit" value="Resolve match" class="btn btn-default" />
+            </div>
+        </div>
+    </div>
+}
+

@@ -1,0 +1,443 @@
+﻿@model TournamentsProject.Models.TournmentModel
+@using TournamentsProject.Models
+@using Microsoft.AspNet.Identity
+@using Microsoft.AspNet.Identity.Owin;
+
+@{
+    ViewBag.Title = "Details";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Details</h2>
+@using (Html.BeginForm())
+{
+    @Html.AntiForgeryToken()
+
+    <div>
+        <h4>TournmentModel</h4>
+        <hr />
+        <dl class="dl-horizontal">
+            <dt>
+                @Html.DisplayNameFor(model => model.TournmentName)
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.TournmentName)
+            </dd>
+
+            <dt>
+                Organizer
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.OrganizerName)
+            </dd>
+
+            <dt>
+                @Html.DisplayNameFor(model => model.Discipline)
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.Discipline)
+            </dd>
+
+            <dt>
+                @Html.DisplayNameFor(model => model.ParticipantLimit)
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.ParticipantLimit)
+            </dd>
+
+            <dt>
+                @Html.DisplayNameFor(model => model.AssignmentDeadline)
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.AssignmentDeadline)
+            </dd>
+
+            <dt>
+                @Html.DisplayNameFor(model => model.TournmentDate)
+            </dt>
+
+            <dd>
+                @Html.DisplayFor(model => model.TournmentDate)
+            </dd>
+
+            <dt>
+                @Html.DisplayNameFor(model => model.ParticipantLimit)
+            </dt>
+            <dd>
+                <p>@Model.ParticipantIds.Count() / @Model.ParticipantLimit</p>
+            </dd>
+
+            <dt>
+                @Html.DisplayNameFor(model => model.ParticipantIds)
+            </dt>
+            <dd>
+                @foreach (var p in Model.ParticipantIds)
+                {
+                    string username0 = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(p.Name).FirstName;
+                    <p>@username0 @p.Ranking</p>
+                }
+            </dd>
+            @if (!String.IsNullOrEmpty(Model.SponsorLogoFile))
+            {
+                <dt>
+                    Sponsored by:
+                </dt>
+
+                <dd>
+                    <img src="~/Content/images/@Html.DisplayFor(model => model.SponsorLogoFile).ToString()" style="height:200px;width:200px;" />
+                </dd>
+            }
+
+
+        </dl>
+    </div>
+
+    <style type="text/css">
+        /* Set the size of the div element that contains the map */
+        #map {
+            height: 400px;
+            /* The height is 400 pixels */
+            width: 100%;
+            /* The width is the width of the web page */
+        }
+    </style>
+
+    <script>
+        // Initialize and add the map
+        function initMap() {
+            // The location of Uluru
+            const uluru = { lat: @Html.DisplayFor(model => model.Latitude), lng:  @Html.DisplayFor(model => model.Longitude) };
+            // The map, centered at Uluru
+            const map = new google.maps.Map(document.getElementById("map"), {
+                zoom: 15,
+                center: uluru,
+            });
+            // The marker, positioned at Uluru
+            const marker = new google.maps.Marker({
+                position: uluru,
+                map: map,
+            });
+        }
+    </script>
+
+    <style>
+        main {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .round {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            width: 200px;
+            list-style: none;
+            padding: 0;
+        }
+
+            .round .spacer {
+                flex-grow: 1;
+            }
+
+                .round .spacer:first-child,
+                .round .spacer:last-child {
+                    flex-grow: .5;
+                }
+
+            .round .game-spacer {
+                flex-grow: 1;
+            }
+
+        /*
+         *  General Styles
+        */
+        body {
+            font-family: sans-serif;
+            font-size: small;
+            padding: 10px;
+            line-height: 1.4em;
+        }
+
+        li.game {
+            padding-left: 20px;
+        }
+
+            li.game.winner {
+                font-weight: bold;
+            }
+
+            li.game span {
+                float: right;
+                margin-right: 5px;
+            }
+
+        li.game-top {
+            border-bottom: 1px solid #aaa;
+        }
+
+        li.game-spacer {
+            border-right: 1px solid #aaa;
+            min-height: 40px;
+        }
+
+        li.game-bottom {
+            border-top: 1px solid #aaa;
+        }
+    </style>
+
+    if (String.Equals(User.Identity.Name, ""))
+    {
+
+    }
+    else
+    {
+        if (DateTime.Compare(Model.TournmentDate, DateTime.Now) < 0)
+        {
+            try
+            {
+                if (Model.ParticipantIds.Find(p => p.Name == User.Identity.GetUserId()).RoundWinner <= 0)
+                {
+                    if (Model.ParticipantIds.Find(p => p.Name == User.Identity.GetUserId()).CurrentOpponent != null)
+                    {
+                    @Html.ActionLink("Resolve match", "ResolveMatch", new { id = Model.Id }, new { @class = "btn btn-primary" })
+                    }
+                }
+            }
+            catch
+            {
+
+            }
+        
+    }
+        else
+    {
+            <p></p>
+        }
+    }
+    //Tournament Bracket
+    if (DateTime.Compare(Model.TournmentDate, DateTime.Now) < 0)
+    {
+        <h1>@Model.TournmentName - Bracket</h1>
+        <main id="tournament">
+            <ul class="round round-1">
+                @{
+                    int offset = 0;
+                    string username = " ";
+                    string username2 = " ";
+                    string ranking = " ";
+                    string ranking2 = " ";
+
+                    if (Model.ParticipantIds.Count % 2 == 1)
+                    {
+                        username = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(Model.ParticipantIds[0].Name).FirstName;
+                        ranking = Model.ParticipantIds[0].Ranking.ToString();
+                        offset = 1;
+                        <li class="spacer">&nbsp;</li>
+
+                        <li class="game game-top">@username<span>@ranking</span></li>
+                        <li class="game game-spacer">&nbsp;</li>
+
+                        <li class="game game-bottom "> <span> </span></li>
+                    }
+                }
+                @for (int i = 0 + offset; i < (Model.ParticipantLimit + offset) / 2; i++)
+                {
+                    username = " ";
+                    ranking = " ";
+                    if (i < (Model.ParticipantIds.Count + offset) / 2)
+                    {
+                        username = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(Model.ParticipantIds[i].Name).FirstName;
+                        ranking = Model.ParticipantIds[i].Ranking.ToString();
+                    }
+                    <li class="spacer">&nbsp;</li>
+
+                    <li class="game game-top">@username<span>@ranking</span></li>
+                    <li class="game game-spacer">&nbsp;</li>
+                    username = " ";
+                    ranking = " ";
+                    if (i < (Model.ParticipantIds.Count + offset) / 2)
+                    {
+                        username = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(Model.ParticipantIds[Model.ParticipantIds.Count() - i - 1 + offset].Name).FirstName;
+                        ranking = Model.ParticipantIds[Model.ParticipantIds.Count() - i - 1 + offset].Ranking.ToString();
+                    }
+
+                    <li class="game game-bottom ">@username<span>@ranking</span></li>
+
+                }
+
+                <li class="spacer">&nbsp;</li>
+            </ul>
+            <ul class="round round-2">
+
+                @for (int i = 0; i < Model.ParticipantLimit / 4; i++)
+                {
+                    username = "";
+                    username2 = "";
+                    ranking = "";
+                    ranking2 = "";
+
+                    for (int j = 0; j < Model.ParticipantIds.Count; j++)
+                    {
+                        if (Model.ParticipantIds[j].BracketPosition.Count >= 1 && Model.ParticipantIds[j].BracketPosition[0].Pos == i * 2 + 1)
+                        {
+                            username = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(Model.ParticipantIds[j].Name).FirstName;
+                            ranking = Model.ParticipantIds[j].Ranking.ToString();
+                        }
+                        if (Model.ParticipantIds[j].BracketPosition.Count >= 1 && Model.ParticipantIds[j].BracketPosition[0].Pos == i * 2 + 2)
+                        {
+                            username2 = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(Model.ParticipantIds[j].Name).FirstName;
+                            ranking2 = Model.ParticipantIds[j].Ranking.ToString();
+                        }
+                    }
+
+                    <li class="spacer">&nbsp;</li>
+
+                    <li class="game game-top">@username<span>@ranking</span></li>
+                    <li class="game game-spacer">&nbsp;</li>
+                    <li class="game game-bottom ">@username2<span>@ranking2</span></li>
+                }
+
+                <li class="spacer">&nbsp;</li>
+            </ul>
+            <ul class="round round-3">
+                @for (int i = 0; i < Model.ParticipantLimit / 8; i++)
+                {
+                    username = "";
+                    username2 = "";
+                    ranking = "";
+                    ranking2 = "";
+                    foreach (var participant in Model.ParticipantIds)
+                    {
+                        if (participant.BracketPosition.Count >= 2 && participant.BracketPosition[0].Pos == i * 2 + 1)
+                        {
+                            username = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(participant.Name).FirstName;
+                            ranking = participant.Ranking.ToString();
+                        }
+                        if (participant.BracketPosition.Count >= 2 && participant.BracketPosition[0].Pos == i * 2 + 2)
+                        {
+                            username2 = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(participant.Name).FirstName;
+                            ranking2 = participant.Ranking.ToString();
+                        }
+                    }
+
+                    <li class="spacer">&nbsp;</li>
+
+                    <li class="game game-top">@username<span>@ranking</span></li>
+                    <li class="game game-spacer">&nbsp;</li>
+                    <li class="game game-bottom ">@username2<span>@ranking2</span></li>
+
+                }
+
+                <li class="spacer">&nbsp;</li>
+            </ul>
+            <ul class="round round-4">
+                @for (int i = 0; i < Model.ParticipantLimit / 16; i++)
+                {
+                    username = "";
+                    username2 = "";
+                    ranking = "";
+                    ranking2 = "";
+                    foreach (var participant in Model.ParticipantIds)
+                    {
+                        if (participant.BracketPosition.Count >= 3 && participant.BracketPosition[0].Pos == i * 2 + 1)
+                        {
+                            username = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(participant.Name).FirstName;
+                            ranking = participant.Ranking.ToString();
+                        }
+                        if (participant.BracketPosition.Count >= 3 && participant.BracketPosition[0].Pos == i * 2 + 2)
+                        {
+                            username2 = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(participant.Name).FirstName;
+                            ranking2 = participant.Ranking.ToString();
+                        }
+                    }
+
+                    <li class="spacer">&nbsp;</li>
+
+                    <li class="game game-top">@username<span>@ranking</span></li>
+                    <li class="game game-spacer">&nbsp;</li>
+                    <li class="game game-bottom ">@username2<span>@ranking2</span></li>
+
+                }
+
+                <li class="spacer">&nbsp;</li>
+            </ul>
+            <ul class="round round-5">
+                @for (int i = 0; i < Model.ParticipantLimit / 32; i++)
+                {
+                    username = "";
+                    username2 = "";
+                    ranking = "";
+                    ranking2 = "";
+                    foreach (var participant in Model.ParticipantIds)
+                    {
+                        if (participant.BracketPosition.Count >= 4 && participant.BracketPosition[0].Pos == i * 2 + 1)
+                        {
+                            username = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(participant.Name).FirstName;
+                            ranking = participant.Ranking.ToString();
+                        }
+                        if (participant.BracketPosition.Count >= 4 && participant.BracketPosition[0].Pos == i * 2 + 2)
+                        {
+                            username2 = HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(participant.Name).FirstName;
+                            ranking2 = participant.Ranking.ToString();
+                        }
+                    }
+
+                    <li class="spacer">&nbsp;</li>
+
+                    <li class="game game-top">@username<span>@ranking</span></li>
+                    <li class="game game-spacer">&nbsp;</li>
+                    <li class="game game-bottom ">@username2<span>@ranking2</span></li>
+                }
+
+                <li class="spacer">&nbsp;</li>
+            </ul>
+        </main>
+    }
+
+    <h3>Localization</h3>
+    <!--The div element for the map -->
+    <dd>
+        @Html.DisplayFor(model => model.LocationAddress)
+    </dd>
+
+    <div id="map"></div>
+
+    <!-- Async script executes immediately and must be after any DOM elements used in callback. -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=MY-API-KEY&callback=initMap&libraries=&v=weekly"
+            async></script>
+    <br />
+    if (String.Equals(User.Identity.Name, ""))
+    {
+        <p>@Html.ActionLink("Log in", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink" }) to join the tournment</p>
+    }
+    else if (HttpContext.Current.GetOwinContext().GetUserManager<ApplicationUserManager>().FindById(User.Identity.GetUserId()).EmailConfirmed == false)
+    {
+        <p>Confirm your email to join the tournment</p>
+    }
+    else
+    {
+        if (DateTime.Compare(Model.AssignmentDeadline, DateTime.Now) > 0)
+        {
+            @Html.ActionLink("Join the tournment", "JoinTournment", new { id = Model.Id }, new { @class = "btn btn-primary" })
+        }
+        else
+        {
+            <p>Registration for the tournment has closed</p>
+        }
+    }
+    <br />
+    <p>
+        @if (String.Equals(User.Identity.GetUserId(), Model.OrganizerId))
+        {
+            @Html.ActionLink("Edit", "Edit", new { id = Model.Id });
+            <a>|</a>
+        }
+
+        @Html.ActionLink("Back to List", "Index", "Home")
+    </p>
+}
